@@ -1,0 +1,81 @@
+class LFUCache {
+private:
+    int capacity, minFreq;
+    unordered_map<int, int> keyToVal;
+    unordered_map<int, int> keyToFreq;
+    unordered_map<int, list<int>> freqToKeys;
+    unordered_map<int, list<int>::iterator> keyToIter;
+public:
+    LFUCache(int capacity) {
+        this->capacity = capacity;
+        this->minFreq = 0;
+    }
+    
+    int get(int key) {
+        if(keyToVal.find(key) == keyToVal.end()){
+            return -1;
+        }
+
+        int freq = keyToFreq[key];
+        freqToKeys[freq].erase(keyToIter[key]);
+        if(freqToKeys[freq].empty()){
+            freqToKeys.erase(freq);
+            if(minFreq == freq) minFreq++;
+        }
+
+        keyToFreq[key] = freq +1;
+        freqToKeys[freq + 1].push_back(key);
+        keyToIter[key] = --freqToKeys[freq + 1].end();
+
+        return keyToVal[key]; 
+    }
+        
+    
+    void put(int key, int value) {
+        if(capacity == 0) return;
+
+        if(keyToVal.find(key) != keyToVal.end()){
+            keyToVal[key] = value;
+            
+            int freq = keyToFreq[key];
+            freqToKeys[freq].erase(keyToIter[key]); 
+            if (freqToKeys[freq].empty()) {
+                freqToKeys.erase(freq);
+                if (minFreq == freq) minFreq++; 
+            }
+
+            keyToFreq[key] = freq + 1;
+            freqToKeys[freq + 1].push_back(key);
+            keyToIter[key] = --freqToKeys[freq + 1].end(); 
+
+            return;
+        }
+
+        if(keyToVal.size() >= capacity){
+            int lfukey = freqToKeys[minFreq].front();
+            freqToKeys[minFreq].pop_front();
+            keyToVal.erase(lfukey);
+            keyToFreq.erase(lfukey);
+            keyToIter.erase(lfukey);
+            if(freqToKeys[minFreq].empty()){
+                freqToKeys.erase(minFreq);
+
+            }
+        }
+
+        keyToVal[key] = value;
+        keyToFreq[key] = 1;
+        freqToKeys[1].push_back(key);
+        keyToIter[key] = --freqToKeys[1].end();
+        minFreq = 1; 
+        
+    }
+
+};
+
+/**
+ * Your LFUCache object will be instantiated and called as such:
+ * LFUCache* obj = new LFUCache(capacity);
+ * int param_1 = obj->get(key);
+ * obj->put(key,value);
+ */
